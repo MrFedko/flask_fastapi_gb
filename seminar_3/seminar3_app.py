@@ -1,10 +1,10 @@
 from flask import Flask, render_template, request, flash, redirect, url_for
 import os
 from config import Config
-from models import db, Student, Faq, GenderEnum, Author, Book, Estimate, User
+from models import db, Student, Faq, GenderEnum, Author, Book, Estimate, User, User2
 from random import choice
 from flask_wtf.csrf import CSRFProtect
-from forms import RegistrationForm
+from forms import RegistrationForm, Registration2Form, Registration3Form
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)
@@ -17,7 +17,9 @@ category = [
     {"title": 'All students', "func_name": 'get_all'},
     {"title": 'All books', "func_name": 'get_all_books'},
     {"title": 'All estimates', "func_name": 'get_all_est'},
-    {"title": 'Registration', "func_name": 'registration'}
+    {"title": 'Registration', "func_name": 'registration'},
+    {"title": 'Registration 2', "func_name": 'registration2'},
+    {"title": 'Registration 3', "func_name": 'registration3'}
 ]
 
 
@@ -117,6 +119,46 @@ def registration():
         flash(f'Вы успешно зарегистрировались!')
         return redirect(url_for('registration'))
     return render_template('registration.html', form=form)
+
+
+@app.route('/registration2/', methods=['GET', 'POST'])
+def registration2():
+    form = Registration2Form()
+    if request.method == 'POST' and form.validate():
+        # Обработка данных из формы
+        username = form.username.data.lower()
+        email = form.email.data
+        date = form.date_of_birth.data
+        user = User(username=username, email=email, date_of_birth=date)
+        if User.query.filter(User.username == username).first() or User.query.filter(User.email == email).first():
+            flash(f'Пользователь с username {username} или e-mail {email} уже существует')
+            return redirect(url_for('registration2'))
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        flash(f'Вы успешно зарегистрировались!')
+        return redirect(url_for('registration2'))
+    return render_template('registration2.html', form=form)
+
+
+@app.route('/registration3/', methods=['GET', 'POST'])
+def registration3():
+    form = Registration3Form()
+    if request.method == 'POST' and form.validate():
+        # Обработка данных из формы
+        name = form.name.data.lower()
+        surname = form.surname.data.lower()
+        email = form.email.data
+        user = User2(name=name, surname=surname, email=email)
+        if User2.query.filter(User2.email == email).first():
+            flash(f'Пользователь с e-mail {email} уже существует')
+            return redirect(url_for('registration'))
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        flash(f'Вы успешно зарегистрировались!')
+        return redirect(url_for('registration3'))
+    return render_template('registration3.html', form=form)
 
 
 if __name__ == '__main__':

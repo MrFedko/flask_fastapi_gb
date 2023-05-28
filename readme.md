@@ -728,4 +728,171 @@ def registration():
 
 ```
 
+## Задание №5
+Создать форму регистрации для пользователя.
+- Форма должна содержать поля: имя, электронная почта,
+пароль (с подтверждением), дата рождения, согласие на
+обработку персональных данных.
+```python
+class Registration2Form(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    email = StringField('E-mail', validators=[DataRequired(), Email()])
+    date_of_birth = DateField('Date of birth', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
+    confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
+    check = BooleanField('Сonsent to the processing of user data', validators=[DataRequired()])
+    submit = SubmitField('Sign In')
+```
+- Валидация должна проверять, что все поля заполнены
+корректно (например, дата рождения должна быть в
+формате дд.мм.гггг).
+- При успешной регистрации пользователь должен быть
+перенаправлен на страницу подтверждения регистрации.
+```python
+@app.route('/registration2/', methods=['GET', 'POST'])
+def registration2():
+    form = Registration2Form()
+    if request.method == 'POST' and form.validate():
+        # Обработка данных из формы
+        username = form.username.data.lower()
+        email = form.email.data
+        date = form.date_of_birth.data
+        user = User(username=username, email=email, date_of_birth=date)
+        if User.query.filter(User.username == username).first() or User.query.filter(User.email == email).first():
+            flash(f'Пользователь с username {username} или e-mail {email} уже существует')
+            return redirect(url_for('registration'))
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        flash(f'Вы успешно зарегистрировались!')
+        return redirect(url_for('registration2'))
+    return render_template('registration2.html', form=form)
+```
+
+```html
+{% block content %}
+    <h1>Registration 2 page</h1>
+    <form method="POST" action="{{ url_for('registration2') }}">
+        {{ form.csrf_token }}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <p>
+            {{ form.username.label }}<br>
+            {{ form.username(size=32) }}
+        </p>
+        <p>
+            {{ form.email.label }}<br>
+            {{ form.email(size=32) }}
+        </p>
+        <p>
+            {{ form.date_of_birth.label }}<br>
+            {{ form.date_of_birth() }}
+        </p>
+        <p>
+            {{ form.password.label }}<br>
+            {{ form.password(size=32) }}
+        </p>
+        <p>
+            {{ form.confirm_password.label }}<br>
+            {{ form.confirm_password(size=32) }}
+        </p>
+        <p>
+            {{ form.check.label }}<br>
+            {{ form.check }}
+        </p>
+        <p>
+        <input type="submit" value="Login">
+        </p>
+    </form>
+{% endblock %}
+```
+
+## Задание №8
+- Создать форму для регистрации пользователей на сайте.
+```python
+class Registration3Form(FlaskForm):
+    name = StringField('Name', validators=[DataRequired()])
+    surname = StringField('Surname', validators=[DataRequired()])
+    email = StringField('E-mail', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
+    confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
+    check = BooleanField('Сonsent to the processing of user data', validators=[DataRequired()])
+    submit = SubmitField('Sign In')
+```
+- Форма должна содержать поля "Имя", "Фамилия", "Email",
+"Пароль" и кнопку "Зарегистрироваться".
+- При отправке формы данные должны сохраняться в базе
+данных, а пароль должен быть зашифрован.
+```python
+@app.route('/registration3/', methods=['GET', 'POST'])
+def registration3():
+    form = Registration3Form()
+    if request.method == 'POST' and form.validate():
+        # Обработка данных из формы
+        name = form.name.data.lower()
+        surname = form.surname.data.lower()
+        email = form.email.data
+        user = User2(name=name, surname=surname, email=email)
+        if User2.query.filter(User2.email == email).first():
+            flash(f'Пользователь с e-mail {email} уже существует')
+            return redirect(url_for('registration'))
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        flash(f'Вы успешно зарегистрировались!')
+        return redirect(url_for('registration3'))
+    return render_template('registration3.html', form=form)
+```
+
+```html
+{% block content %}
+    <h1>Registration 3 page</h1>
+    <form method="POST" action="{{ url_for('registration3') }}">
+        {{ form.csrf_token }}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <p>
+            {{ form.name.label }}<br>
+            {{ form.name(size=32) }}
+        </p>
+        <p>
+            {{ form.surname.label }}<br>
+            {{ form.surname(size=32) }}
+        </p>
+        <p>
+            {{ form.email.label }}<br>
+            {{ form.email(size=32) }}
+        </p>
+        <p>
+            {{ form.password.label }}<br>
+            {{ form.password(size=32) }}
+        </p>
+        <p>
+            {{ form.confirm_password.label }}<br>
+            {{ form.confirm_password(size=32) }}
+        </p>
+        <p>
+            {{ form.check.label }}<br>
+            {{ form.check }}
+        </p>
+        <p>
+        <input type="submit" value="Login">
+        </p>
+    </form>
+{% endblock %}
+```
 
