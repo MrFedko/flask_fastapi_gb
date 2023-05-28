@@ -1,19 +1,23 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, flash, redirect, url_for
 import os
 from config import Config
-from models import db, Student, Faq, GenderEnum, Author, Book, Estimate
+from models import db, Student, Faq, GenderEnum, Author, Book, Estimate, User
 from random import choice
+from flask_wtf.csrf import CSRFProtect
+from forms import RegistrationForm
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)
 app.config.from_object(Config)
 db.init_app(app)
+csrf = CSRFProtect(app)
 
 category = [
     {"title": 'Home page', "func_name": 'index'},
     {"title": 'All students', "func_name": 'get_all'},
     {"title": 'All books', "func_name": 'get_all_books'},
-    {"title": 'All estimates', "func_name": 'get_all_est'}
+    {"title": 'All estimates', "func_name": 'get_all_est'},
+    {"title": 'Registration', "func_name": 'registration'}
 ]
 
 
@@ -94,6 +98,25 @@ def fill_tables():
 def get_all_est():
     students = Student.query.all()
     return render_template('all_estimates.html', students=students)
+
+
+@app.route('/registration/', methods=['GET', 'POST'])
+def registration():
+    form = RegistrationForm()
+    if request.method == 'POST' and form.validate():
+        # Обработка данных из формы
+        username = form.username.data.lower()
+        email = form.email.data
+        user = User(username=username, email=email)
+        if User.query.filter(User.username == username).first() or User.query.filter(User.email == email).first():
+            flash(f'Пользователь с username {username} или e-mail {email} уже существует')
+            return redirect(url_for('registration'))
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        flash(f'Вы успешно зарегистрировались!')
+        return redirect(url_for('registration'))
+    return render_template('registration.html', form=form)
 
 
 if __name__ == '__main__':

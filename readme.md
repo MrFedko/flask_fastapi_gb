@@ -642,5 +642,90 @@ def get_all_est():
 {% endblock %}
 ```
 
+## Задание №4
+- Создайте форму регистрации пользователя с использованием Flask-WTF. Форма должна
+содержать следующие поля:
+  - Имя пользователя (обязательное поле)
+  - Электронная почта (обязательное поле, с валидацией на корректность ввода email)
+  - Пароль (обязательное поле, с валидацией на минимальную длину пароля)
+  - Подтверждение пароля (обязательное поле, с валидацией на совпадение с паролем)
+  ```python
+  class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+  ```
+- После отправки формы данные должны сохраняться в базе данных (можно использовать SQLite)
+и выводиться сообщение об успешной регистрации. Если какое-то из обязательных полей не
+заполнено или данные не прошли валидацию, то должно выводиться соответствующее
+сообщение об ошибке.
+- Дополнительно: добавьте проверку на уникальность имени пользователя и электронной почты в
+базе данных. Если такой пользователь уже зарегистрирован, то должно выводиться сообщение
+об ошибке.
+```python
+@app.route('/registration/', methods=['GET', 'POST'])
+def registration():
+    form = RegistrationForm()
+    if request.method == 'POST' and form.validate():
+        # Обработка данных из формы
+        username = form.username.data.lower()
+        email = form.email.data
+        user = User(username=username, email=email)
+        if User.query.filter(User.username == username).first() or User.query.filter(User.email == email).first():
+            flash(f'Пользователь с username {username} или e-mail {email} уже существует')
+            return redirect(url_for('registration'))
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        flash(f'Вы успешно зарегистрировались!')
+        return redirect(url_for('registration'))
+    return render_template('registration.html', form=form)
+```
+
+```html
+{% block content %}
+    <h1>Registration page</h1>
+    <form method="POST" action="{{ url_for('registration') }}">
+        {{ form.csrf_token }}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <p>
+            {{ form.username.label }}<br>
+            {{ form.username(size=32) }}
+        </p>
+        <p>
+            {{ form.email.label }}<br>
+            {{ form.email(size=32) }}
+        </p>
+        <p>
+            {{ form.password.label }}<br>
+            {{ form.password(size=32) }}
+        </p>
+        <p>
+            {{ form.confirm_password.label }}<br>
+            {{ form.confirm_password(size=32) }}
+        </p>
+        <p>
+        <input type="submit" value="Login">
+        </p>
+    </form>
+{% endblock %}
+
+```
 
 
