@@ -542,8 +542,7 @@ class Faq(db.Model):
 @app.route('/all_students/')
 def get_all():
     students = Student.query.all()
-    faqs = Faq.query.all()
-    context = {'students': students, 'faqs': faqs}
+    context = {'students': students}
     return render_template('all_stud.html', **context)
 ```
 ```html
@@ -590,8 +589,7 @@ class Author(db.Model):
 @app.route('/all_books/')
 def get_all_books():
     books = Book.query.all()
-    authors = Author.query.all()
-    context = {'books': books, 'authors': authors}
+    context = {'books': books}
     return render_template('all_books.html', **context)
 ```
 ```html
@@ -600,6 +598,46 @@ def get_all_books():
 
     {% for book in books %}
         <li> {{ book.title }} - {{ book.author_name }} </li>
+    {% endfor %}
+{% endblock %}
+```
+
+## Задание №3
+Доработаем задача про студентов
+- Создать базу данных для хранения информации о студентах и их оценках в
+учебном заведении.
+- База данных должна содержать две таблицы: "Студенты" и "Оценки".
+- В таблице "Студенты" должны быть следующие поля: id, имя, фамилия, группа
+и email.
+- В таблице "Оценки" должны быть следующие поля: id, id студента, название
+предмета и оценка.
+```python
+class Estimate(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('student.id'))
+    student = db.relationship('Student', backref='estimates', lazy=True)
+    faculty = db.Column(db.String, db.ForeignKey('faq.title'))
+    faq = db.relationship('Faq', backref='estimates', lazy=True)
+    value = db.Column(db.Integer)
+
+    def __repr__(self):
+        return f'{self.value}'
+```
+- Необходимо создать связь между таблицами "Студенты" и "Оценки".
+- Написать функцию-обработчик, которая будет выводить список всех
+студентов с указанием их оценок.
+```python
+@app.route('/estimates/')
+def get_all_est():
+    students = Student.query.all()
+    return render_template('all_estimates.html', students=students)
+```
+```html
+{% block content %}
+    <h1>List of estimates</h1>
+
+    {% for student in students %}
+        <li> {{ student.name }} - {{ student.estimates }} </li>
     {% endfor %}
 {% endblock %}
 ```

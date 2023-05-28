@@ -1,7 +1,7 @@
 from flask import Flask, render_template
 import os
 from config import Config
-from models import db, Student, Faq, GenderEnum, Author, Book
+from models import db, Student, Faq, GenderEnum, Author, Book, Estimate
 from random import choice
 
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -12,7 +12,8 @@ db.init_app(app)
 category = [
     {"title": 'Home page', "func_name": 'index'},
     {"title": 'All students', "func_name": 'get_all'},
-    {"title": 'All books', "func_name": 'get_all_books'}
+    {"title": 'All books', "func_name": 'get_all_books'},
+    {"title": 'All estimates', "func_name": 'get_all_est'}
 ]
 
 
@@ -49,8 +50,7 @@ def fill_tables():
 @app.route('/all_students/')
 def get_all():
     students = Student.query.all()
-    faqs = Faq.query.all()
-    context = {'students': students, 'faqs': faqs}
+    context = {'students': students}
     return render_template('all_stud.html', **context)
 
 
@@ -74,9 +74,26 @@ def fill_tables():
 @app.route('/all_books/')
 def get_all_books():
     books = Book.query.all()
-    authors = Author.query.all()
-    context = {'books': books, 'authors': authors}
+    context = {'books': books}
     return render_template('all_books.html', **context)
+
+
+@app.cli.command("fill-estimates")
+def fill_tables():
+    count = 5
+    for _ in range(1, count ** 4):
+        student_id = choice([stud.id for stud in Student.query.all()])
+        faculty = choice([faq.title for faq in Faq.query.all()])
+        value = choice(range(1, 101))
+        new_estimate = Estimate(student_id=student_id, faculty=faculty, value=value)
+        db.session.add(new_estimate)
+    db.session.commit()
+
+
+@app.route('/estimates/')
+def get_all_est():
+    students = Student.query.all()
+    return render_template('all_estimates.html', students=students)
 
 
 if __name__ == '__main__':

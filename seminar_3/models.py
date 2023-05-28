@@ -28,8 +28,18 @@ class Faq(db.Model):
     title = db.Column(db.String(80), nullable=False)
     students = db.relationship('Student', backref='faculty', lazy=True)
 
+
+# В таблице "Оценки" должны быть следующие поля: id, id студента, название предмета и оценка.
+class Estimate(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('student.id'))
+    student = db.relationship('Student', backref='estimates', lazy=True)
+    faculty = db.Column(db.String, db.ForeignKey('faq.title'))
+    faq = db.relationship('Faq', backref='estimates', lazy=True)
+    value = db.Column(db.Integer)
+
     def __repr__(self):
-        return f'Faculty ({self.title})'
+        return f'{self.value}'
 
 
 class Book(db.Model):
