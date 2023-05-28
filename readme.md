@@ -496,3 +496,113 @@ def logout():
         <a href="/log">Login</a>
     {% endif %}
 ```
+
+
+# Семинар 3. Дополнительные возможности Flask
+[link for folder](seminar_3)
+
+## Задание №1
+- Создать базу данных для хранения информации о студентах университета.
+- База данных должна содержать две таблицы: "Студенты" и "Факультеты".
+- В таблице "Студенты" должны быть следующие поля: id, имя, фамилия,
+возраст, пол, группа и id факультета.
+ ```python
+class GenderEnum(enum.Enum):
+    MALE = 'male'
+    FEMALE = 'female'
+
+
+class Student(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), nullable=False)
+    surname = db.Column(db.String(80), nullable=False)
+    age = db.Column(db.Integer)
+    gender = db.Column(db.Enum(GenderEnum))
+    group = db.Column(db.Integer)
+    faq = db.Column(db.Integer, db.ForeignKey('faq.id'))
+
+    def __repr__(self):
+        return f'Student ({self.name})'
+```
+- В таблице "Факультеты" должны быть следующие поля: id и название
+факультета.
+```python
+class Faq(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(80), nullable=False)
+    students = db.relationship('Student', backref='faculty', lazy=True)
+    
+    def __repr__(self):
+        return f'Faculty ({self.title})'
+```
+- Необходимо создать связь между таблицами "Студенты" и "Факультеты".
+- Написать функцию-обработчик, которая будет выводить список всех
+студентов с указанием их факультета.
+```python
+@app.route('/all_students/')
+def get_all():
+    students = Student.query.all()
+    faqs = Faq.query.all()
+    context = {'students': students, 'faqs': faqs}
+    return render_template('all_stud.html', **context)
+```
+```html
+{% block content %}
+    <h1>List of students</h1>
+
+    {% for student in students %}
+        <li> {{ student.name }} - {{ student.faculty }} </li>
+    {% endfor %}
+{% endblock %}
+```
+
+## Задание №2
+- Создать базу данных для хранения информации о книгах в библиотеке.
+- База данных должна содержать две таблицы: "Книги" и "Авторы".
+- В таблице "Книги" должны быть следующие поля: id, название, год издания,
+количество экземпляров и id автора.
+```python
+class Book(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False, unique=True)
+    year = db.Column(db.Integer, nullable=False)
+    count = db.Column(db.Integer)
+    author = db.Column(db.Integer, db.ForeignKey('author.id'))
+    
+    def __repr__(self):
+        return f'Book ({self.title})'
+```
+- В таблице "Авторы" должны быть следующие поля: id, имя и фамилия.
+```python
+class Author(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), nullable=False)
+    surname = db.Column(db.String(80), nullable=False)
+    books = db.relationship('Book', backref='author_name', lazy=True)
+
+    def __repr__(self):
+        return f'Author ({self.name} {self.surname})'
+```
+- Необходимо создать связь между таблицами "Книги" и "Авторы".
+- Написать функцию-обработчик, которая будет выводить список всех книг с
+указанием их авторов.
+```python
+@app.route('/all_books/')
+def get_all_books():
+    books = Book.query.all()
+    authors = Author.query.all()
+    context = {'books': books, 'authors': authors}
+    return render_template('all_books.html', **context)
+```
+```html
+{% block content %}
+    <h1>List of books</h1>
+
+    {% for book in books %}
+        <li> {{ book.title }} - {{ book.author_name }} </li>
+    {% endfor %}
+{% endblock %}
+```
+
+
+
